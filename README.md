@@ -14,6 +14,7 @@ A Node.js + Express + MongoDB REST API backend for a pizza ordering application,
 | Web Framework      | [Express](https://expressjs.com/) v5 |
 | Database           | [MongoDB](https://www.mongodb.com/) via [Mongoose](https://mongoosejs.com/) |
 | Config Management  | [dotenv](https://www.npmjs.com/package/dotenv) |
+| Password Hashing   | [bcrypt](https://www.npmjs.com/package/bcrypt) |
 | Dev Tooling        | [nodemon](https://www.npmjs.com/package/nodemon) |
 
 ---
@@ -88,13 +89,13 @@ PIZZA_APP_BACKEND/
 - **`src/controllers/userController.js`** — Receives the HTTP request, hands it off to the service layer, and formats a consistent JSON response (`{ success, message, data, error }`) whether the operation succeeds or fails.
 - **`src/service/userService.js`** — Contains the actual business rule for registration: check whether a user with the same email/mobile number already exists before creating a new one. Talks only to the repository, never to Mongoose directly.
 - **`src/repositories/userRepository.js`** — The only place that runs Mongoose queries (`findOne`, `create`) against the `User` model. Keeps database access isolated from business logic.
-- **`src/schema/userSchema.js`** — The Mongoose schema/model for `User`: first name, last name, mobile number, email, and password, with validation (required fields, length limits, uniqueness, email format).
+- **`src/schema/userSchema.js`** — The Mongoose schema/model for `User`: first name, last name, mobile number, email, and password, with validation (required fields, length limits, uniqueness, email format). A `pre('save')` hook hashes the password with bcrypt before it's written to the database, so plaintext passwords are never stored.
 
 ### Coming next
 
 - Additional resources: Pizza, Order, Cart, Category (schema → repository → service → controller → route for each)
 - `src/middlewares/` — Auth guards, centralized error handling, request validation
-- Authentication (JWT-based login/signup, password hashing)
+- Authentication (JWT-based login/signup)
 - Order management and cart flow
 
 ---
