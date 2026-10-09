@@ -2,11 +2,22 @@ name: SkyTrace desktop release
 
 # Builds the SkyTrace AI desktop app (backend + built dashboard in one executable)
 # for Windows, macOS and Linux, smoke-tests each build, and publishes them as a
-# GitHub Release when a tag like "skytrace-v0.1.0" is pushed.
+# GitHub Release on every push to master or the SkyTrace branch that touches the
+# app (tagged skytrace-v0.1.<run number>), or when a "skytrace-v*" tag is pushed.
 on:
   push:
+    branches: ["master", "claude/skytrace-ai-backend-610xfu"]
     tags: ["skytrace-v*"]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "desktop/**"
+      - ".github/workflows/skytrace-desktop-release.yml"
   workflow_dispatch:
+
+concurrency:
+  group: skytrace-release-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -108,16 +119,24 @@ jobs:
 
   release:
     needs: build
-    if: startsWith(github.ref, 'refs/tags/')
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
         with:
           path: assets
           merge-multiple: true
+      - name: Choose release tag
+        id: tag
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then echo "name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT";
+          else echo "name=skytrace-v0.1.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"; fi
       - uses: softprops/action-gh-release@v2
         with:
-          name: SkyTrace AI desktop ${{ github.ref_name }}
+          tag_name: ${{ steps.tag.outputs.name }}
+          target_commitish: ${{ github.sha }}
+          name: SkyTrace AI desktop ${{ steps.tag.outputs.name }}
+          make_latest: "true"
           files: assets/*
           body: |
             **SkyTrace AI — desktop app (prototype).** Download the file for your system, unzip it and
