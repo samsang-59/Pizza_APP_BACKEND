@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from app.core import constants as C
 
-_STRICT = ConfigDict(allow_inf_nan=False, extra="forbid")
+_STRICT = ConfigDict(allow_inf_nan=False, extra="forbid", strict=True)
 
 
 class AircraftType(str, Enum):
@@ -60,6 +60,7 @@ class AnalysisRequest(BaseModel):
     model_config = ConfigDict(
         allow_inf_nan=False,
         extra="forbid",
+        strict=True,
         json_schema_extra={"description": "Inputs for an illustrative, non-operational search-area sketch."},
     )
 
@@ -103,7 +104,6 @@ class AnalysisRequest(BaseModel):
         C.DEFAULT_GRID_SIZE,
         ge=C.MIN_GRID_SIZE,
         le=C.MAX_GRID_SIZE,
-        strict=True,
         description="Number of grid rows and columns (grid_size x grid_size cells).",
     )
     search_region_buffer_nm: float = Field(
