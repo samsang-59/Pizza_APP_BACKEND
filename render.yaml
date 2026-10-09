@@ -1,0 +1,14 @@
+# Render Blueprint: deploys SkyTrace AI (backend + dashboard) as one web service
+# from the repository Dockerfile. See SKYTRACE.md -> "Host it as a website".
+services:
+  - type: web
+    name: skytrace-ai
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production

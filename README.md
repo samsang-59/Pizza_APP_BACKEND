@@ -1,4 +1,5 @@
 > **SkyTrace AI (hackathon prototype) also lives in this repository** — see [SKYTRACE.md](SKYTRACE.md).
+> **Download the ready-to-run app:** https://github.com/samsang-59/Pizza_APP_BACKEND/releases/latest
 > Run the complete app with `./start-skytrace.sh` (or `.\start-skytrace.ps1`, or `docker build -t skytrace-ai . && docker run -p 8000:8000 skytrace-ai`) and open http://localhost:8000.
 
 # 🍕 Pizza App Backend

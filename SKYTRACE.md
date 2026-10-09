@@ -24,6 +24,47 @@ browser ──► http://localhost:8000/           React app (frontend/dist, ser
 
 (The Express/MongoDB "pizza" code in `src/` is a separate, unrelated project.)
 
+## Easiest — download the app (no installs)
+
+**Download page:** https://github.com/samsang-59/Pizza_APP_BACKEND/releases/latest
+
+| System | File |
+|---|---|
+| Windows 10/11 (64-bit) | `SkyTraceAI-windows-x64.zip` |
+| macOS (Apple Silicon M1–M4) | `SkyTraceAI-macos-apple-silicon.zip` |
+| Linux (x64) | `SkyTraceAI-linux-x64.tar.gz` |
+
+To run it:
+1. Unzip the file.
+2. Double-click **SkyTraceAI**. Your browser opens the dashboard (usually http://127.0.0.1:8000).
+3. Keep the small console window open while you use the app, and close it to quit.
+
+The app is not code-signed, so your system may warn you the first time:
+- **Windows:** choose *More info → Run anyway*.
+- **macOS:** right-click the file → *Open*.
+
+`README-FIRST.txt` in the download has the details.
+
+These files are built and smoke-tested by
+[`.github/workflows/skytrace-desktop-release.yml`](.github/workflows/skytrace-desktop-release.yml)
+whenever a tag like `skytrace-v0.1.0` is pushed. To build one yourself, build the frontend with
+`VITE_API_BASE_URL=/`, then run `pyinstaller desktop/skytrace.spec`.
+
+## Open it as a website
+
+**GitHub Codespaces (free tier, nothing to install):**
+https://codespaces.new/samsang-59/Pizza_APP_BACKEND?ref=claude/skytrace-ai-backend-610xfu
+
+Click *Create codespace* and wait a few minutes for the first setup. SkyTrace then starts by
+itself and opens in a new browser tab. The address is private to your GitHub account unless you
+make port 8000 public in the *Ports* tab.
+
+**Permanent public website (Render, free plan):** once this branch is merged into `master`, open
+https://render.com/deploy?repo=https://github.com/samsang-59/Pizza_APP_BACKEND and approve.
+Render builds the `Dockerfile` using `render.yaml` and gives you a link like
+`https://skytrace-ai-xxxx.onrender.com`. Free services sleep when idle, so the first visit after a
+pause takes about a minute.
+
 ## Option 1 — one command (recommended)
 
 Requires **Python 3.11+** and **Node.js 18+**.

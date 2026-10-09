@@ -1,0 +1,136 @@
+name: SkyTrace desktop release
+
+# Builds the SkyTrace AI desktop app (backend + built dashboard in one executable)
+# for Windows, macOS and Linux, smoke-tests each build, and publishes them as a
+# GitHub Release when a tag like "skytrace-v0.1.0" is pushed.
+on:
+  push:
+    tags: ["skytrace-v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Backend tests
+        working-directory: backend
+        run: |
+          pip install -r requirements.txt
+          pytest
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Frontend lint, typecheck and tests
+        working-directory: frontend
+        run: |
+          npm ci --no-audit --no-fund
+          npm run lint
+          npx tsc --noEmit
+          npm run test -- --run
+
+  build:
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            asset: SkyTraceAI-windows-x64.zip
+            exe: SkyTraceAI.exe
+          - os: macos-latest
+            asset: SkyTraceAI-macos-apple-silicon.zip
+            exe: SkyTraceAI
+          - os: ubuntu-22.04
+            asset: SkyTraceAI-linux-x64.tar.gz
+            exe: SkyTraceAI
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Build dashboard (same-origin API)
+        working-directory: frontend
+        env:
+          VITE_API_BASE_URL: /
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Python dependencies
+        run: pip install -r backend/requirements.txt "pyinstaller>=6.10,<7"
+      - name: Package executable
+        run: pyinstaller desktop/skytrace.spec --noconfirm
+      - name: Smoke test the executable
+        env:
+          SKYTRACE_NO_BROWSER: "1"
+          PORT: "8765"
+        run: |
+          ./dist/${{ matrix.exe }} > smoke.log 2>&1 &
+          APP_PID=$!
+          for i in $(seq 1 90); do curl -sf http://127.0.0.1:8765/health && break; sleep 1; done
+          curl -sf http://127.0.0.1:8765/ | grep -q "SkyTrace AI"
+          curl -sf http://127.0.0.1:8765/api/v1/demo-scenario > demo.json
+          curl -sf -X POST http://127.0.0.1:8765/api/v1/analyze -H "Content-Type: application/json" -d @demo.json | grep -q '"status":"success"'
+          echo "Smoke test passed"
+          cat smoke.log
+          if [ "$RUNNER_OS" = "Windows" ]; then taskkill //F //IM SkyTraceAI.exe || true; else kill "$APP_PID" || true; fi
+      - name: Archive
+        run: |
+          mkdir -p package
+          cp "dist/${{ matrix.exe }}" package/
+          cp desktop/README-FIRST.txt package/
+          cd package
+          if [ "$RUNNER_OS" = "Windows" ]; then 7z a "../${{ matrix.asset }}" ./*;
+          elif [ "$RUNNER_OS" = "macOS" ]; then zip -9 "../${{ matrix.asset }}" ./*;
+          else tar -czf "../${{ matrix.asset }}" ./*; fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: ${{ matrix.asset }}
+          if-no-files-found: error
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: assets
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: SkyTrace AI desktop ${{ github.ref_name }}
+          files: assets/*
+          body: |
+            **SkyTrace AI — desktop app (prototype).** Download the file for your system, unzip it and
+            double-click **SkyTraceAI**. Your browser opens the dashboard automatically. Then click
+            **LOAD DEMO SCENARIO** → **ANALYZE SEARCH AREA**.
+
+            | System | File |
+            |---|---|
+            | Windows 10/11 (64-bit) | `SkyTraceAI-windows-x64.zip` |
+            | macOS (Apple Silicon M1–M4) | `SkyTraceAI-macos-apple-silicon.zip` |
+            | Linux (x64) | `SkyTraceAI-linux-x64.tar.gz` |
+
+            The app is not code-signed: on Windows choose *More info → Run anyway*; on macOS right-click → *Open*.
+            See `README-FIRST.txt` inside the download. Intel Macs: use `./start-skytrace.sh` from the source code.
+
+            Prototype for demonstration. **Not for operational search-and-rescue decisions.**
