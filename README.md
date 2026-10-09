@@ -1,3 +1,6 @@
+> **SkyTrace AI (hackathon prototype) also lives in this repository** — see [SKYTRACE.md](SKYTRACE.md).
+> Run the complete app with `./start-skytrace.sh` (or `.\start-skytrace.ps1`, or `docker build -t skytrace-ai . && docker run -p 8000:8000 skytrace-ai`) and open http://localhost:8000.
+
 # 🍕 Pizza App Backend
 
 A Node.js + Express + MongoDB REST API backend for a pizza ordering application, built around the **MVC (Model–View–Controller)** architectural pattern (View is replaced by JSON API responses, as is standard for a backend-only service).

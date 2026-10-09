@@ -35,10 +35,16 @@ cp .env.example .env        # optional
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `VITE_API_BASE_URL` | `http://localhost:8000` | Base URL of the FastAPI backend (no trailing slash) |
+| `VITE_API_BASE_URL` | `http://localhost:8000` | Base URL of the FastAPI backend (no trailing slash). `/` = same origin, used when the backend serves the built app |
 
 There are no API keys or secrets anywhere in the frontend, and the browser makes no external AI
 calls. The only third-party request is for OpenStreetMap tiles.
+
+## Running the complete app (one server)
+
+From the repository root, `./start-skytrace.sh` (Windows: `.\start-skytrace.ps1`) builds this app
+with `VITE_API_BASE_URL=/` and the FastAPI backend serves it at http://localhost:8000. A Docker
+image is also provided. See [`../SKYTRACE.md`](../SKYTRACE.md).
 
 ## Running backend + frontend (two terminals)
 

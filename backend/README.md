@@ -97,9 +97,17 @@ copy .env.example .env         # optional
 | `APP_VERSION` | `0.1.0` | API version string |
 | `CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Comma-separated; whitespace stripped, empties and duplicates ignored |
 | `LOG_LEVEL` | `INFO` | `DEBUG`/`INFO`/`WARNING`/`ERROR`/`CRITICAL` (invalid → `INFO`) |
+| `SERVE_FRONTEND` | `false` | `true` = also serve the built React app (`FRONTEND_DIST`) at `/` — combined single-server mode |
+| `FRONTEND_DIST` | `../frontend/dist` | Folder containing the built frontend (`index.html`, `assets/`) |
 
 CORS never allows credentials, because the API uses no cookies or auth. A `*` origin is
 therefore never combined with credentials.
+
+## Run the complete app (backend + frontend)
+
+From the repository root: `./start-skytrace.sh` (Windows: `.\start-skytrace.ps1`) or Docker. See
+[`../SKYTRACE.md`](../SKYTRACE.md). In combined mode the API, docs and UI share one origin, and a
+missing `FRONTEND_DIST` falls back to API-only mode with a warning.
 
 ## Run the server
 
@@ -133,7 +141,8 @@ curl -s -X POST http://localhost:8000/api/v1/analyze -H "Content-Type: applicati
 
 | Method | Path | Description |
 |---|---|---|
-| GET | `/` | name, version, status, description |
+| GET | `/` | API-only mode: name, version, status, description. Combined mode (`SERVE_FRONTEND=true`): the React app |
+| GET | `/api/v1/info` | Service information (always available, includes `frontend_served`) |
 | GET | `/health` | `{"status": "ok"}` |
 | GET | `/api/v1/aircraft-profiles` | 3 generic demo categories. They are **not** aircraft-specific performance profiles and do not affect any calculation. |
 | GET | `/api/v1/demo-scenario` | Complete valid request (central Bay of Bengal, over water) |

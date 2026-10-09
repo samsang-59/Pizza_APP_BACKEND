@@ -1,0 +1,14 @@
+# Only backend/ and frontend/ are needed for the SkyTrace image.
+.git
+src
+node_modules
+package.json
+package-lock.json
+**/node_modules
+**/.venv
+**/__pycache__
+**/.pytest_cache
+frontend/dist
+frontend/coverage
+**/.env
+*.log

@@ -6,29 +6,6 @@
     "version": "0.1.0"
   },
   "paths": {
-    "/": {
-      "get": {
-        "tags": [
-          "meta"
-        ],
-        "summary": "Service information",
-        "operationId": "root__get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "type": "object",
-                  "title": "Response Root  Get"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/health": {
       "get": {
         "tags": [
@@ -45,6 +22,29 @@
                   "additionalProperties": true,
                   "type": "object",
                   "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/info": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "Service information",
+        "operationId": "info_api_v1_info_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Info Api V1 Info Get"
                 }
               }
             }
@@ -163,6 +163,29 @@
                   "additionalProperties": true,
                   "type": "object",
                   "title": "Response Methodology Api V1 Methodology Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "Service information",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Root  Get"
                 }
               }
             }

@@ -44,7 +44,7 @@ export function BackendStatus({ status, lastChecked, onRetry }: Props) {
       >
         API connectivity only — not live aircraft tracking.
         <span className="mt-1 block font-mono text-[10px] text-muted">
-          {API_BASE_URL}/health{lastChecked ? ` · checked ${lastChecked.toLocaleTimeString()}` : ''}
+          {API_BASE_URL || window.location.origin}/health{lastChecked ? ` · checked ${lastChecked.toLocaleTimeString()}` : ''}
         </span>
         <span className="mt-0.5 block text-[10px] text-muted">Click to re-check.</span>
       </span>
