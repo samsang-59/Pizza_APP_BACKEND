@@ -1,0 +1,1 @@
+{"status":"error","error":{"code":"VALIDATION_ERROR","message":"Request validation failed; see details for each invalid field.","details":[{"field":"body","loc":["body"],"message":"baseline distance ground_speed_knots x elapsed_minutes / 60 = 7000.0 nm exceeds the supported maximum of 5000 nm","type":"value_error"}]}}
