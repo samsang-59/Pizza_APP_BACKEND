@@ -6,6 +6,18 @@ export default defineConfig({
   plugins: [react()],
   server: { port: 5173, strictPort: true, host: 'localhost' },
   preview: { port: 4173, strictPort: true },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ['react', 'react-dom'],
+          map: ['leaflet', 'react-leaflet'],
+          motion: ['framer-motion'],
+          forms: ['react-hook-form', '@hookform/resolvers', 'zod', 'axios'],
+        },
+      },
+    },
+  },
   test: {
     environment: 'jsdom',
     globals: true,

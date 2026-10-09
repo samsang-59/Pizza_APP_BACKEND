@@ -140,7 +140,7 @@ export interface GridCell {
   centre_latitude: number;
   centre_longitude: number;
   intersects_region: boolean;
-  /** [0, 1]; relative demo value, NOT a probability */
+  /** [0, 1]; relative demo value, NOT probabilities */
   illustrative_relative_demo_score: number;
   geometry: GeoJSONGeometry;
 }

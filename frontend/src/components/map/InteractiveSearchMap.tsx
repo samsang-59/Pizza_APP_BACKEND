@@ -17,7 +17,7 @@ import { SearchRegionLayer } from './SearchRegionLayer';
 
 const DEFAULT_CENTER: LatLngTuple = [15, 82];
 const DEFAULT_ZOOM = 4;
-const FIT_OPTIONS = { padding: [36, 36] as [number, number], maxZoom: 9 };
+const FIT_MAX_ZOOM = 9;
 
 interface Props {
   result: AnalysisResponse | null;
@@ -32,7 +32,17 @@ interface Commands {
 }
 
 /** Imperative map behaviour: resize handling, auto-fit, fit/reset commands, pan to selection. */
-function MapController({ result, commands, refLng }: { result: AnalysisResponse | null; commands: Commands; refLng: number }) {
+function MapController({
+  result,
+  commands,
+  refLng,
+  legendVisible,
+}: {
+  result: AnalysisResponse | null;
+  commands: Commands;
+  refLng: number;
+  legendVisible: boolean;
+}) {
   const map = useMap();
   const reduced = useReducedMotionSafe();
   const { selectedScenarioId } = useSelection();
@@ -49,8 +59,16 @@ function MapController({ result, commands, refLng }: { result: AnalysisResponse 
   const fit = useCallback(() => {
     if (!result) return;
     const bounds = bboxToLeafletBounds(result.search_region.properties.bounds, refLng);
-    map.fitBounds(bounds, { ...FIT_OPTIONS, animate: !reduced });
-  }, [map, result, refLng, reduced]);
+    // Keep the region clear of the floating controls (top) and legend (bottom-left).
+    const wide = map.getSize().x >= 640;
+    const left = legendVisible && wide ? 280 : 32;
+    map.fitBounds(bounds, {
+      paddingTopLeft: [left, 72],
+      paddingBottomRight: [32, 48],
+      maxZoom: FIT_MAX_ZOOM,
+      animate: !reduced,
+    });
+  }, [map, result, refLng, reduced, legendVisible]);
 
   // Auto-fit once per new analysis (not on hover/selection).
   useEffect(() => {
@@ -144,7 +162,7 @@ export function InteractiveSearchMap({ result, isLoading, isStale, backendStatus
             maxZoom={18}
             eventHandlers={tileHandlers}
           />
-          <MapController result={result} commands={commands} refLng={refLng} />
+          <MapController result={result} commands={commands} refLng={refLng} legendVisible={layers.legend} />
           {result && lastKnown && (
             <>
               {layers.grid && result.grid?.cells?.length > 0 && <GridLayer grid={result.grid} refLng={refLng} />}
