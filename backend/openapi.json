@@ -1,0 +1,984 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "SkyTrace AI",
+    "description": "Prototype backend that sketches an ILLUSTRATIVE search area after loss of contact with an aircraft, from the last known position, ground speed, ground track and elapsed time. Demonstration only: it does not locate real aircraft or compute operational search-and-rescue statistics.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "Service information",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Root  Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "Liveness check",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/aircraft-profiles": {
+      "get": {
+        "tags": [
+          "analysis"
+        ],
+        "summary": "Generic demo aircraft categories",
+        "operationId": "aircraft_profiles_api_v1_aircraft_profiles_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AircraftProfilesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/demo-scenario": {
+      "get": {
+        "tags": [
+          "analysis"
+        ],
+        "summary": "A complete, valid over-water example request (Bay of Bengal)",
+        "operationId": "demo_scenario_api_v1_demo_scenario_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Demo Scenario Api V1 Demo Scenario Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyze": {
+      "post": {
+        "tags": [
+          "analysis"
+        ],
+        "summary": "Compute an illustrative search-area sketch",
+        "operationId": "analyze_api_v1_analyze_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation, projection or geometry error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/methodology": {
+      "get": {
+        "tags": [
+          "analysis"
+        ],
+        "summary": "Maths, assumptions and limitations",
+        "operationId": "methodology_api_v1_methodology_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Methodology Api V1 Methodology Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AircraftProfile": {
+        "properties": {
+          "aircraft_type": {
+            "type": "string",
+            "title": "Aircraft Type"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "aircraft_type",
+          "display_name",
+          "description"
+        ],
+        "title": "AircraftProfile"
+      },
+      "AircraftProfilesResponse": {
+        "properties": {
+          "note": {
+            "type": "string",
+            "title": "Note"
+          },
+          "affects_calculations": {
+            "type": "boolean",
+            "const": false,
+            "title": "Affects Calculations",
+            "default": false
+          },
+          "profiles": {
+            "items": {
+              "$ref": "#/components/schemas/AircraftProfile"
+            },
+            "type": "array",
+            "title": "Profiles"
+          }
+        },
+        "type": "object",
+        "required": [
+          "note",
+          "profiles"
+        ],
+        "title": "AircraftProfilesResponse"
+      },
+      "AircraftType": {
+        "type": "string",
+        "enum": [
+          "generic_light_aircraft",
+          "generic_turboprop",
+          "generic_jet"
+        ],
+        "title": "AircraftType"
+      },
+      "AnalysisRequest": {
+        "properties": {
+          "last_known_position": {
+            "$ref": "#/components/schemas/Position",
+            "description": "Last known position (WGS84 degrees)."
+          },
+          "heading_degrees": {
+            "type": "number",
+            "exclusiveMaximum": 360.0,
+            "minimum": 0.0,
+            "title": "Heading Degrees",
+            "description": "Degrees clockwise from TRUE north in [0, 360) (0 = N, 90 = E). Because it is combined with ground speed, the baseline treats it as the GROUND TRACK. With wind present, true heading and ground track generally differ."
+          },
+          "ground_speed_knots": {
+            "type": "number",
+            "maximum": 700.0,
+            "minimum": 0.0,
+            "title": "Ground Speed Knots",
+            "description": "Ground speed in knots (NOT airspeed)."
+          },
+          "elapsed_minutes": {
+            "type": "number",
+            "maximum": 1440.0,
+            "minimum": 0.0,
+            "title": "Elapsed Minutes",
+            "description": "Minutes elapsed since the last known position."
+          },
+          "wind": {
+            "$ref": "#/components/schemas/Wind",
+            "description": "Reported wind. Context only; never added to the baseline."
+          },
+          "aircraft_type": {
+            "$ref": "#/components/schemas/AircraftType",
+            "description": "Generic demo category. Descriptive only; does not affect calculations."
+          },
+          "fuel_remaining_percent": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Fuel Remaining Percent",
+            "description": "Reported fuel remaining in percent. Context only; does not affect geometry."
+          },
+          "position_uncertainty_nm": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Position Uncertainty Nm",
+            "description": "Uncertainty of the last known position, nautical miles.",
+            "default": 5.0
+          },
+          "heading_uncertainty_degrees": {
+            "type": "number",
+            "maximum": 45.0,
+            "minimum": 0.0,
+            "title": "Heading Uncertainty Degrees",
+            "description": "Half-width u of the heading sensitivity sweep, degrees (scenarios at h-u and h+u).",
+            "default": 10.0
+          },
+          "grid_size": {
+            "type": "integer",
+            "maximum": 15.0,
+            "minimum": 3.0,
+            "title": "Grid Size",
+            "description": "Number of grid rows and columns (grid_size x grid_size cells).",
+            "default": 5
+          },
+          "search_region_buffer_nm": {
+            "type": "number",
+            "maximum": 200.0,
+            "minimum": 0.0,
+            "title": "Search Region Buffer Nm",
+            "description": "Buffer around the swept sector, nautical miles. Applied buffer = max(this, position_uncertainty_nm).",
+            "default": 10.0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "last_known_position",
+          "heading_degrees",
+          "ground_speed_knots",
+          "elapsed_minutes",
+          "wind",
+          "aircraft_type",
+          "fuel_remaining_percent"
+        ],
+        "title": "AnalysisRequest",
+        "description": "Inputs for an illustrative, non-operational search-area sketch."
+      },
+      "AnalysisResponse": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "title": "Schema Version"
+          },
+          "analysis_id": {
+            "type": "string",
+            "title": "Analysis Id"
+          },
+          "status": {
+            "type": "string",
+            "const": "success",
+            "title": "Status",
+            "default": "success"
+          },
+          "input_summary": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/InputValue"
+            },
+            "type": "object",
+            "title": "Input Summary"
+          },
+          "baseline": {
+            "$ref": "#/components/schemas/Baseline"
+          },
+          "scenarios": {
+            "items": {
+              "$ref": "#/components/schemas/Scenario"
+            },
+            "type": "array",
+            "title": "Scenarios"
+          },
+          "search_region": {
+            "$ref": "#/components/schemas/SearchRegionFeature"
+          },
+          "grid": {
+            "$ref": "#/components/schemas/Grid"
+          },
+          "fuel_context": {
+            "$ref": "#/components/schemas/FuelContext"
+          },
+          "wind_context": {
+            "$ref": "#/components/schemas/WindContext"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation"
+          },
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Assumptions"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Warnings"
+          },
+          "disclaimer": {
+            "type": "string",
+            "title": "Disclaimer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "schema_version",
+          "analysis_id",
+          "input_summary",
+          "baseline",
+          "scenarios",
+          "search_region",
+          "grid",
+          "fuel_context",
+          "wind_context",
+          "explanation",
+          "assumptions",
+          "warnings",
+          "disclaimer"
+        ],
+        "title": "AnalysisResponse"
+      },
+      "Baseline": {
+        "properties": {
+          "distance_nm": {
+            "type": "number",
+            "title": "Distance Nm"
+          },
+          "endpoint": {
+            "$ref": "#/components/schemas/LatLon"
+          },
+          "heading_degrees": {
+            "type": "number",
+            "title": "Heading Degrees"
+          },
+          "interpretation": {
+            "type": "string",
+            "const": "ground track",
+            "title": "Interpretation",
+            "default": "ground track"
+          }
+        },
+        "type": "object",
+        "required": [
+          "distance_nm",
+          "endpoint",
+          "heading_degrees"
+        ],
+        "title": "Baseline"
+      },
+      "Bounds": {
+        "properties": {
+          "min_lat": {
+            "type": "number",
+            "title": "Min Lat"
+          },
+          "min_lon": {
+            "type": "number",
+            "title": "Min Lon",
+            "description": "Western edge. If crosses_antimeridian, min_lon > max_lon (RFC 7946 5.2)."
+          },
+          "max_lat": {
+            "type": "number",
+            "title": "Max Lat"
+          },
+          "max_lon": {
+            "type": "number",
+            "title": "Max Lon",
+            "description": "Eastern edge."
+          }
+        },
+        "type": "object",
+        "required": [
+          "min_lat",
+          "min_lon",
+          "max_lat",
+          "max_lon"
+        ],
+        "title": "Bounds"
+      },
+      "CellSize": {
+        "properties": {
+          "width_nm": {
+            "type": "number",
+            "title": "Width Nm",
+            "description": "West-east cell size in the local projection."
+          },
+          "height_nm": {
+            "type": "number",
+            "title": "Height Nm",
+            "description": "North-south cell size in the local projection."
+          }
+        },
+        "type": "object",
+        "required": [
+          "width_nm",
+          "height_nm"
+        ],
+        "title": "CellSize"
+      },
+      "ErrorBody": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "VALIDATION_ERROR",
+              "PROJECTION_ERROR",
+              "GEOMETRY_ERROR",
+              "INTERNAL_ERROR",
+              "HTTP_ERROR"
+            ],
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "details": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Details",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorBody"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "error",
+            "title": "Status",
+            "default": "error"
+          },
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody"
+          }
+        },
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse"
+      },
+      "FuelContext": {
+        "properties": {
+          "remaining_percent": {
+            "type": "number",
+            "title": "Remaining Percent"
+          },
+          "aircraft_type": {
+            "type": "string",
+            "title": "Aircraft Type"
+          },
+          "endurance_minutes": {
+            "type": "null",
+            "title": "Endurance Minutes"
+          },
+          "affects_geometry": {
+            "type": "boolean",
+            "const": false,
+            "title": "Affects Geometry",
+            "default": false
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "remaining_percent",
+          "aircraft_type",
+          "explanation"
+        ],
+        "title": "FuelContext"
+      },
+      "GeoJSONGeometry": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "Polygon",
+              "MultiPolygon"
+            ],
+            "title": "Type"
+          },
+          "coordinates": {
+            "items": {},
+            "type": "array",
+            "title": "Coordinates",
+            "description": "GeoJSON coordinates, [longitude, latitude] order."
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "coordinates"
+        ],
+        "title": "GeoJSONGeometry"
+      },
+      "Grid": {
+        "properties": {
+          "rows": {
+            "type": "integer",
+            "title": "Rows"
+          },
+          "columns": {
+            "type": "integer",
+            "title": "Columns"
+          },
+          "ordering": {
+            "type": "string",
+            "title": "Ordering"
+          },
+          "score_type": {
+            "type": "string",
+            "const": "illustrative_relative_demo_score",
+            "title": "Score Type",
+            "default": "illustrative_relative_demo_score"
+          },
+          "score_description": {
+            "type": "string",
+            "title": "Score Description"
+          },
+          "sigma_nm": {
+            "type": "number",
+            "title": "Sigma Nm"
+          },
+          "cell_size_nm": {
+            "$ref": "#/components/schemas/CellSize"
+          },
+          "cells": {
+            "items": {
+              "$ref": "#/components/schemas/GridCell"
+            },
+            "type": "array",
+            "title": "Cells"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rows",
+          "columns",
+          "ordering",
+          "score_description",
+          "sigma_nm",
+          "cell_size_nm",
+          "cells"
+        ],
+        "title": "Grid"
+      },
+      "GridCell": {
+        "properties": {
+          "cell_id": {
+            "type": "string",
+            "title": "Cell Id"
+          },
+          "row": {
+            "type": "integer",
+            "title": "Row",
+            "description": "0 = northernmost row."
+          },
+          "column": {
+            "type": "integer",
+            "title": "Column",
+            "description": "0 = westernmost column."
+          },
+          "centre_latitude": {
+            "type": "number",
+            "title": "Centre Latitude"
+          },
+          "centre_longitude": {
+            "type": "number",
+            "title": "Centre Longitude"
+          },
+          "intersects_region": {
+            "type": "boolean",
+            "title": "Intersects Region"
+          },
+          "illustrative_relative_demo_score": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Illustrative Relative Demo Score"
+          },
+          "geometry": {
+            "$ref": "#/components/schemas/GeoJSONGeometry"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cell_id",
+          "row",
+          "column",
+          "centre_latitude",
+          "centre_longitude",
+          "intersects_region",
+          "illustrative_relative_demo_score",
+          "geometry"
+        ],
+        "title": "GridCell"
+      },
+      "InputValue": {
+        "properties": {
+          "value": {
+            "title": "Value"
+          },
+          "units": {
+            "type": "string",
+            "title": "Units"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "units"
+        ],
+        "title": "InputValue"
+      },
+      "LatLon": {
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "title": "Longitude"
+          }
+        },
+        "type": "object",
+        "required": [
+          "latitude",
+          "longitude"
+        ],
+        "title": "LatLon"
+      },
+      "Position": {
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Latitude",
+            "description": "Latitude in decimal degrees (WGS84), positive north. |latitude| > 89 is rejected (polar regions unsupported)."
+          },
+          "longitude": {
+            "type": "number",
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Longitude",
+            "description": "Longitude in decimal degrees (WGS84), positive east."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "latitude",
+          "longitude"
+        ],
+        "title": "Position"
+      },
+      "RegionProperties": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "const": "Illustrative search region",
+            "title": "Label",
+            "default": "Illustrative search region"
+          },
+          "area_sq_nm": {
+            "type": "number",
+            "title": "Area Sq Nm",
+            "description": "Approximate; computed in the local AEQD projection."
+          },
+          "area_note": {
+            "type": "string",
+            "title": "Area Note"
+          },
+          "bounds": {
+            "$ref": "#/components/schemas/Bounds"
+          },
+          "crosses_antimeridian": {
+            "type": "boolean",
+            "title": "Crosses Antimeridian"
+          },
+          "buffer_nm_applied": {
+            "type": "number",
+            "title": "Buffer Nm Applied"
+          },
+          "buffer_rule": {
+            "type": "string",
+            "title": "Buffer Rule"
+          },
+          "included_scenarios": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Included Scenarios"
+          },
+          "method": {
+            "type": "string",
+            "title": "Method"
+          },
+          "orientation": {
+            "type": "string",
+            "title": "Orientation"
+          },
+          "disclaimer": {
+            "type": "string",
+            "title": "Disclaimer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "area_sq_nm",
+          "area_note",
+          "bounds",
+          "crosses_antimeridian",
+          "buffer_nm_applied",
+          "buffer_rule",
+          "included_scenarios",
+          "method",
+          "orientation",
+          "disclaimer"
+        ],
+        "title": "RegionProperties"
+      },
+      "Scenario": {
+        "properties": {
+          "scenario_id": {
+            "type": "string",
+            "title": "Scenario Id"
+          },
+          "scenario_name": {
+            "type": "string",
+            "title": "Scenario Name"
+          },
+          "scenario_type": {
+            "type": "string",
+            "title": "Scenario Type"
+          },
+          "endpoint": {
+            "$ref": "#/components/schemas/LatLon"
+          },
+          "distance_nm": {
+            "type": "number",
+            "title": "Distance Nm"
+          },
+          "heading_degrees_used": {
+            "type": "number",
+            "title": "Heading Degrees Used"
+          },
+          "offset_from_baseline_nm": {
+            "type": "number",
+            "title": "Offset From Baseline Nm"
+          },
+          "included_in_region": {
+            "type": "boolean",
+            "title": "Included In Region"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Assumptions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenario_id",
+          "scenario_name",
+          "scenario_type",
+          "endpoint",
+          "distance_nm",
+          "heading_degrees_used",
+          "offset_from_baseline_nm",
+          "included_in_region",
+          "description",
+          "assumptions"
+        ],
+        "title": "Scenario"
+      },
+      "SearchRegionFeature": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "Feature",
+            "title": "Type",
+            "default": "Feature"
+          },
+          "geometry": {
+            "$ref": "#/components/schemas/GeoJSONGeometry"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/RegionProperties"
+          }
+        },
+        "type": "object",
+        "required": [
+          "geometry",
+          "properties"
+        ],
+        "title": "SearchRegionFeature"
+      },
+      "Wind": {
+        "properties": {
+          "speed_knots": {
+            "type": "number",
+            "maximum": 200.0,
+            "minimum": 0.0,
+            "title": "Speed Knots",
+            "description": "Wind speed in knots."
+          },
+          "direction_from_degrees": {
+            "type": "number",
+            "exclusiveMaximum": 360.0,
+            "minimum": 0.0,
+            "title": "Direction From Degrees",
+            "description": "Direction the wind blows FROM, degrees clockwise from true north, in [0, 360)."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "speed_knots",
+          "direction_from_degrees"
+        ],
+        "title": "Wind"
+      },
+      "WindContext": {
+        "properties": {
+          "speed_knots": {
+            "type": "number",
+            "title": "Speed Knots"
+          },
+          "direction_from_degrees": {
+            "type": "number",
+            "title": "Direction From Degrees"
+          },
+          "direction_toward_degrees": {
+            "type": "number",
+            "title": "Direction Toward Degrees"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "applied_to_baseline": {
+            "type": "boolean",
+            "const": false,
+            "title": "Applied To Baseline",
+            "default": false
+          },
+          "hypothetical_scenario_included": {
+            "type": "boolean",
+            "title": "Hypothetical Scenario Included"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "speed_knots",
+          "direction_from_degrees",
+          "direction_toward_degrees",
+          "description",
+          "hypothetical_scenario_included",
+          "limitations"
+        ],
+        "title": "WindContext"
+      }
+    }
+  }
+}
