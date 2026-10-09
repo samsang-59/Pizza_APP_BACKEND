@@ -37,18 +37,18 @@ export function MapLayerControls({ layers, onToggle, onFit, onReset, hasResult }
           type="button"
           onClick={onFit}
           disabled={!hasResult}
-          className="panel inline-flex min-h-[40px] items-center gap-1.5 px-3 text-xs font-medium text-ink transition-colors hover:border-accent/40 disabled:cursor-not-allowed disabled:opacity-50"
+          className="panel inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 px-3 text-xs font-medium text-ink transition-colors hover:border-accent/40 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Focus className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
-          Fit to region
+          <span className="max-sm:sr-only">Fit to region</span>
         </button>
         <button
           type="button"
           onClick={onReset}
-          className="panel inline-flex min-h-[40px] items-center gap-1.5 px-3 text-xs font-medium text-ink transition-colors hover:border-accent/40"
+          className="panel inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 px-3 text-xs font-medium text-ink transition-colors hover:border-accent/40"
         >
           <LocateFixed className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
-          Reset view
+          <span className="max-sm:sr-only">Reset view</span>
         </button>
         <button
           type="button"
@@ -58,7 +58,7 @@ export function MapLayerControls({ layers, onToggle, onFit, onReset, hasResult }
           className="panel inline-flex min-h-[40px] min-w-[40px] items-center justify-center gap-1.5 px-3 text-xs font-medium text-ink transition-colors hover:border-accent/40"
         >
           {open ? <X className="h-3.5 w-3.5" aria-hidden="true" /> : <Layers className="h-3.5 w-3.5 text-accent" aria-hidden="true" />}
-          <span>Layers</span>
+          <span className="max-sm:sr-only">Layers</span>
         </button>
       </div>
       <AnimatePresence initial={false}>

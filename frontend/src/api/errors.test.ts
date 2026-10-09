@@ -59,6 +59,16 @@ describe('normalizeError', () => {
     expect(parseErrorBody(404, { detail: 'Not Found' }).message).toBe('Not Found');
   });
 
+  it('skips metadata-only details such as GEOMETRY_ERROR {geometry, pole}', () => {
+    const err = parseErrorBody(422, {
+      status: 'error',
+      error: { code: 'GEOMETRY_ERROR', message: 'The search region reaches within 10 nm of the North Pole', details: [{ geometry: 'search region', pole: 'north' }] },
+    });
+    expect(err.code).toBe('GEOMETRY_ERROR');
+    expect(err.otherDetails).toEqual([]);
+    expect(err.message).toMatch(/North Pole/);
+  });
+
   it('maps backend loc paths to form fields', () => {
     expect(locToFormField(['body', 'last_known_position', 'longitude'])).toBe('longitude');
     expect(locToFormField(['body', 'wind', 'direction_from_degrees'])).toBe('wind_direction_from_degrees');

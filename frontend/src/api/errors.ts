@@ -66,10 +66,10 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
-function detailMessage(d: RawDetail): string {
+function detailMessage(d: RawDetail): string | null {
   if (typeof d.message === 'string') return d.message;
   if (typeof d.msg === 'string') return d.msg;
-  return 'Invalid value';
+  return null;
 }
 
 function detailLoc(d: RawDetail): (string | number)[] | undefined {
@@ -88,6 +88,8 @@ function splitDetails(details: unknown[]): Pick<AppError, 'fieldErrors' | 'other
     }
     const d = raw as RawDetail;
     const msg = detailMessage(d);
+    // Metadata-only details (e.g. GEOMETRY_ERROR {geometry, pole}) carry no user-facing text.
+    if (msg === null) continue;
     const field = locToFormField(detailLoc(d));
     if (field && !fieldErrors[field]) fieldErrors[field] = msg;
     else otherDetails.push(msg);
