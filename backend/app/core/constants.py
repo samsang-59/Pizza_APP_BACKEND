@@ -83,3 +83,7 @@ FORBIDDEN_PHRASES = (
     "most likely",
     "predicted path",
 )
+
+# Beyond this baseline distance an extra warning notes growing AEQD distortion
+# of areas/shapes far from the projection centre.
+AEQD_DISTORTION_WARNING_NM = 1000.0
