@@ -3,12 +3,30 @@
 from __future__ import annotations
 
 from enum import Enum
+from typing import Annotated, Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, field_validator, model_validator
 
 from app.core import constants as C
 
-_STRICT = ConfigDict(allow_inf_nan=False, extra="forbid", strict=True)
+_STRICT = ConfigDict(allow_inf_nan=False, extra="forbid")
+
+
+def _json_number_only(value: Any) -> Any:
+    """Reject booleans and numeric strings instead of silently coercing them."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError("must be a JSON number")
+    return value
+
+
+def _json_integer_only(value: Any) -> Any:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValueError("must be a JSON integer")
+    return value
+
+
+Number = Annotated[float, BeforeValidator(_json_number_only)]
+Integer = Annotated[int, BeforeValidator(_json_integer_only)]
 
 
 class AircraftType(str, Enum):
@@ -20,7 +38,7 @@ class AircraftType(str, Enum):
 class Position(BaseModel):
     model_config = _STRICT
 
-    latitude: float = Field(
+    latitude: Number = Field(
         ...,
         ge=-90,
         le=90,
@@ -29,7 +47,7 @@ class Position(BaseModel):
             f"|latitude| > {C.MAX_ABS_LATITUDE_DEG:g} is rejected (polar regions unsupported)."
         ),
     )
-    longitude: float = Field(
+    longitude: Number = Field(
         ..., ge=-180, le=180, description="Longitude in decimal degrees (WGS84), positive east."
     )
 
@@ -47,8 +65,8 @@ class Position(BaseModel):
 class Wind(BaseModel):
     model_config = _STRICT
 
-    speed_knots: float = Field(..., ge=0, le=C.MAX_WIND_SPEED_KNOTS, description="Wind speed in knots.")
-    direction_from_degrees: float = Field(
+    speed_knots: Number = Field(..., ge=0, le=C.MAX_WIND_SPEED_KNOTS, description="Wind speed in knots.")
+    direction_from_degrees: Number = Field(
         ...,
         ge=0,
         lt=360,
@@ -60,12 +78,11 @@ class AnalysisRequest(BaseModel):
     model_config = ConfigDict(
         allow_inf_nan=False,
         extra="forbid",
-        strict=True,
         json_schema_extra={"description": "Inputs for an illustrative, non-operational search-area sketch."},
     )
 
     last_known_position: Position = Field(..., description="Last known position (WGS84 degrees).")
-    heading_degrees: float = Field(
+    heading_degrees: Number = Field(
         ...,
         ge=0,
         lt=360,
@@ -75,38 +92,38 @@ class AnalysisRequest(BaseModel):
             "true heading and ground track generally differ."
         ),
     )
-    ground_speed_knots: float = Field(
+    ground_speed_knots: Number = Field(
         ..., ge=0, le=C.MAX_GROUND_SPEED_KNOTS, description="Ground speed in knots (NOT airspeed)."
     )
-    elapsed_minutes: float = Field(
+    elapsed_minutes: Number = Field(
         ..., ge=0, le=C.MAX_ELAPSED_MINUTES, description="Minutes elapsed since the last known position."
     )
     wind: Wind = Field(..., description="Reported wind. Context only; never added to the baseline.")
     aircraft_type: AircraftType = Field(
         ..., description="Generic demo category. Descriptive only; does not affect calculations."
     )
-    fuel_remaining_percent: float = Field(
+    fuel_remaining_percent: Number = Field(
         ..., ge=0, le=100, description="Reported fuel remaining in percent. Context only; does not affect geometry."
     )
-    position_uncertainty_nm: float = Field(
+    position_uncertainty_nm: Number = Field(
         C.DEFAULT_POSITION_UNCERTAINTY_NM,
         ge=0,
         le=C.MAX_POSITION_UNCERTAINTY_NM,
         description="Uncertainty of the last known position, nautical miles.",
     )
-    heading_uncertainty_degrees: float = Field(
+    heading_uncertainty_degrees: Number = Field(
         C.DEFAULT_HEADING_UNCERTAINTY_DEG,
         ge=0,
         le=C.MAX_HEADING_UNCERTAINTY_DEG,
         description="Half-width u of the heading sensitivity sweep, degrees (scenarios at h-u and h+u).",
     )
-    grid_size: int = Field(
+    grid_size: Integer = Field(
         C.DEFAULT_GRID_SIZE,
         ge=C.MIN_GRID_SIZE,
         le=C.MAX_GRID_SIZE,
         description="Number of grid rows and columns (grid_size x grid_size cells).",
     )
-    search_region_buffer_nm: float = Field(
+    search_region_buffer_nm: Number = Field(
         C.DEFAULT_REGION_BUFFER_NM,
         ge=0,
         le=C.MAX_REGION_BUFFER_NM,
